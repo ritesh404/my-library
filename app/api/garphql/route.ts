@@ -1,10 +1,20 @@
 // pages/api/graphql.js
 import { connectToMongo } from "@/lib/db/mongo";
 import { connectToPostgres } from "@/lib/db/postgres";
-import { authorQueryResolver } from "@/lib/resolvers/author";
-import { bookQueryResolver } from "@/lib/resolvers/book";
-import { authorQuery, authorType } from "@/lib/typeDefs/author";
-import { bookQuery, bookType } from "@/lib/typeDefs/book";
+import {
+  authorQueryResolver,
+  createAuthorMutationResolver,
+  deleteAuthorMutationResolver,
+  updateAuthorMutationResolver,
+} from "@/lib/resolvers/author";
+import {
+  bookQueryResolver,
+  createBookMutationResolver,
+  deleteBookMutationResolver,
+  updateBookMutationResolver,
+} from "@/lib/resolvers/book";
+import { authorMutation, authorQuery, authorType } from "@/lib/typeDefs/author";
+import { bookMutation, bookQuery, bookType } from "@/lib/typeDefs/book";
 import { once } from "@/lib/util/once";
 import { ApolloServer } from "@apollo/server";
 import { startServerAndCreateNextHandler } from "@as-integrations/next";
@@ -17,12 +27,25 @@ const typeDefs = `
     ${bookQuery}
     ${authorQuery}
   }
+  
+  type Mutation {
+    ${bookMutation}
+    ${authorMutation}
+  }
 `;
 
 const resolvers = {
   Query: {
     books: bookQueryResolver,
     authors: authorQueryResolver,
+  },
+  Mutation: {
+    createBook: createBookMutationResolver,
+    updateBook: updateBookMutationResolver,
+    deleteBook: deleteBookMutationResolver,
+    createAuthor: createAuthorMutationResolver,
+    updateAuthor: updateAuthorMutationResolver,
+    deleteAuthor: deleteAuthorMutationResolver,
   },
 };
 
