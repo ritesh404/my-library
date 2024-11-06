@@ -101,7 +101,7 @@ const Authors = ({ currentPage }: { currentPage: number }) => {
       </div>
       {showModal && (
         <CreateAuthorModal
-          onCreateAuthorSuccess={(author) => {
+          onCreateAuthorSuccess={() => {
             refetchAuthors();
             setShowModal(false);
           }}
