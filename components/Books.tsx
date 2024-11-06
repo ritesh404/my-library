@@ -63,7 +63,7 @@ const Books = ({ currentPage }: { currentPage: number }) => {
         {loading ? (
           <div className="py-4">Please wait...</div>
         ) : (
-          data.books.map((book: Book) => (
+          data?.books.map((book: Book) => (
             <div key={book.id} className="flex flex-col gap-4">
               <div>{book.title}</div>
               {/* <div className="text-sm text-gray-500">By {book.author.name}</div> */}

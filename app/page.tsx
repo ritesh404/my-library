@@ -1,4 +1,5 @@
 "use client";
+import Authors from "@/components/Authors";
 import Books from "@/components/Books";
 import Tab from "@/components/Tab";
 import Image from "next/image";
@@ -25,14 +26,18 @@ export default function Home() {
   };
 
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
+    <div className="grid grid-rows-[20px_1fr_20px] min-h-screen px-8 pb-20 gap-16 font-[family-name:var(--font-geist-sans)]">
+      <main className="w-full h-full flex flex-col gap-8 row-start-2 sm:items-start">
         <Tab
           tabs={tabs}
           selectedTabId={selectedTabId}
           onTabChange={handleTabChange}
         />
-        {selectedTabId == "books" ? <Books currentPage={currentPage} /> : <></>}
+        {selectedTabId == "books" ? (
+          <Books currentPage={currentPage} />
+        ) : (
+          <Authors currentPage={currentPage} />
+        )}
       </main>
       <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
         <a
