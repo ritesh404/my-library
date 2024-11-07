@@ -1,25 +1,7 @@
+import { BOOKS_QUERY } from "@/lib/gql/book";
+import { Book } from "@/lib/types/book";
 import { gql, useQuery } from "@apollo/client";
 import React, { useState } from "react";
-
-interface Book {
-  id: string;
-  title: string;
-  description: string;
-  author: {
-    name: string;
-    id: string;
-  };
-}
-
-const BOOKS_QUERY = gql`
-  query Books($limit: Int, $offset: Int) {
-    books(limit: $limit, offset: $offset) {
-      id
-      title
-      description
-    }
-  }
-`;
 
 const ITEMS_PER_PAGE = 10;
 

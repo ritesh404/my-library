@@ -6,6 +6,7 @@ export const AUTHORS_QUERY = gql`
       id
       name
       biography
+      born_date
     }
   }
 `;
@@ -17,6 +18,38 @@ export const CREATE_AUTHOR = gql`
     $born_date: String
   ) {
     createAuthor(name: $name, biography: $biography, born_date: $born_date) {
+      id
+      name
+      biography
+      born_date
+    }
+  }
+`;
+
+export const UPDATE_AUTHOR = gql`
+  mutation UpdateAuthor(
+    $id: ID!
+    $name: String!
+    $biography: String
+    $born_date: String
+  ) {
+    updateAuthor(
+      id: $id
+      name: $name
+      biography: $biography
+      born_date: $born_date
+    ) {
+      id
+      name
+      biography
+      born_date
+    }
+  }
+`;
+
+export const DELETE_AUTHOR = gql`
+  mutation DelteAuthor($id: ID!) {
+    deleteAuthor(id: $id) {
       id
       name
       biography

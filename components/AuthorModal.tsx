@@ -1,54 +1,72 @@
-"use client";
-
 import React, { useState } from "react";
 import { useMutation } from "@apollo/client";
 import Modal from "./Modal";
-import { AUTHORS_QUERY, CREATE_AUTHOR } from "@/lib/gql/author";
+import { AUTHORS_QUERY, CREATE_AUTHOR, UPDATE_AUTHOR } from "@/lib/gql/author";
+import { Author } from "@/lib/types/author";
 
 interface AuthorModalProps {
-  onCreateAuthorSuccess: (author: {
+  onAuthorSuccess: (author: {
     id: string;
     biography: string;
     born_date: string;
     name: string;
   }) => void;
-  onCreateAuthorFailure: () => void;
+  onAuthorFailure: () => void;
   onCancel: () => void;
+  author?: Author | null;
 }
 
 const AuthorForm = ({
-  onCreateAuthorFailure,
-  onCreateAuthorSuccess,
+  onAuthorFailure: onCreateAuthorFailure,
+  onAuthorSuccess: onCreateAuthorSuccess,
   onCancel,
+  author,
 }: AuthorModalProps) => {
-  const [name, setName] = useState("");
-  const [biography, setBiography] = useState("");
-  const [bornDate, setBornDate] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [name, setName] = useState(author?.name ?? "");
+  const [biography, setBiography] = useState(author?.biography ?? "");
+  const [bornDate, setBornDate] = useState(
+    author?.born_date
+      ? new Date(Number(author.born_date)).toISOString().slice(0, 10)
+      : ""
+  );
 
-  const [createAuthor] = useMutation(CREATE_AUTHOR, {
+  const [createAuthor, { loading: isCreating }] = useMutation(CREATE_AUTHOR, {
+    refetchQueries: [{ query: AUTHORS_QUERY }],
+  });
+
+  const [updateAuthor, { loading: isUpdating }] = useMutation(UPDATE_AUTHOR, {
     refetchQueries: [{ query: AUTHORS_QUERY }],
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
     try {
-      const { data } = await createAuthor({
-        variables: {
-          name,
-          biography,
-          born_date: bornDate,
-        },
-      });
-      onCreateAuthorSuccess(data.createAuthor);
+      if (author) {
+        const { data } = await updateAuthor({
+          variables: {
+            id: author.id,
+            name,
+            biography,
+            born_date: bornDate,
+          },
+        });
+        onCreateAuthorSuccess(data.updateAuthor);
+      } else {
+        const { data } = await createAuthor({
+          variables: {
+            name,
+            biography,
+            born_date: bornDate,
+          },
+        });
+        onCreateAuthorSuccess(data.createAuthor);
+      }
       // Clear form after submission
     } catch (error) {
       console.error("Error creating author:", error);
       onCreateAuthorFailure();
     }
-    setIsSubmitting(false);
   };
 
   return (
@@ -86,16 +104,16 @@ const AuthorForm = ({
           className="w-full p-2 border rounded"
         />
       </div>
-      {isSubmitting ? (
+      {isCreating || isUpdating ? (
         <div className="text-center">Please wait...</div>
       ) : (
         <>
           <button
             type="submit"
             className="px-4 py-2 mt-4 bg-blue-500 text-white rounded"
-            disabled={isSubmitting}
+            disabled={isCreating || isUpdating}
           >
-            Create
+            {author ? "Update" : "Create"}
           </button>
           <button
             type="button"
@@ -115,8 +133,9 @@ const CreateAuthorModal = (props: AuthorModalProps) => {
     <Modal>
       <div className="mt-2">
         <AuthorForm
-          onCreateAuthorSuccess={props.onCreateAuthorSuccess}
-          onCreateAuthorFailure={props.onCreateAuthorFailure}
+          author={props.author}
+          onAuthorSuccess={props.onAuthorSuccess}
+          onAuthorFailure={props.onAuthorFailure}
           onCancel={props.onCancel}
         />
       </div>

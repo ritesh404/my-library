@@ -1,7 +1,9 @@
-import { useQuery } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import { useState } from "react";
-import CreateAuthorModal from "./CreateAuthorModal";
-import { AUTHORS_QUERY } from "@/lib/gql/author";
+import AuthorModal from "./AuthorModal";
+import BookModal from "./BookModal";
+import { AUTHORS_QUERY, DELETE_AUTHOR } from "@/lib/gql/author";
+import Modal from "./Modal";
 
 interface Author {
   id: string;
@@ -11,10 +13,74 @@ interface Author {
 
 const ITEMS_PER_PAGE = 10;
 
+const ConfirmDeleteModal = ({
+  author,
+  onConfirm,
+  onCancel,
+  isBusy = false,
+}: {
+  author: Author;
+  onConfirm: () => void;
+  onCancel: () => void;
+  isBusy: boolean;
+}) => {
+  return (
+    <Modal>
+      <p>
+        Are you sure you want to delete details of author <b>{author.name}</b>?
+      </p>
+      <p>All books by the author will also be deleted</p>
+      <div className="mt-4 flex gap-8">
+        {isBusy ? (
+          "Please wait..."
+        ) : (
+          <>
+            <button
+              type="button"
+              className=" px-4 py-2 text-sm font-medium text-red-900 bg-red-100 border border-transparent rounded-md hover:bg-red-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500"
+              onClick={onConfirm}
+            >
+              Yes, delete
+            </button>
+            <button
+              type="button"
+              className=" px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-md hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500"
+              onClick={onCancel}
+            >
+              No, cancel
+            </button>
+          </>
+        )}
+      </div>
+    </Modal>
+  );
+};
+
+const SomethingWentWrongModal = ({ onConfirm }: { onConfirm: () => void }) => {
+  return (
+    <Modal>
+      <p>Something went wrong</p>
+      <div className="mt-4 flex gap-8">
+        <button
+          type="button"
+          className=" px-4 py-2 text-sm font-medium text-red-900 bg-red-100 border border-transparent rounded-md hover:bg-red-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500"
+          onClick={onConfirm}
+        >
+          Ok
+        </button>
+      </div>
+    </Modal>
+  );
+};
+
 const Authors = ({ currentPage }: { currentPage: number }) => {
   const [nameFilter, setNameFilter] = useState("");
   const [yearFilter, setYearFilter] = useState("");
-  const [showModal, setShowModal] = useState(false);
+  const [showAuthorCreationModal, setShowAuthorCreationModal] = useState(false);
+  const [showBookCreationModal, setShowBookCreationModal] = useState(false);
+  const [selectedAuthor, setSelectedAuthor] = useState<Author | null>(null);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showSomethingWentWrong, setShowSomethingWentWrong] = useState(false);
 
   const {
     data,
@@ -26,6 +92,27 @@ const Authors = ({ currentPage }: { currentPage: number }) => {
       offset: (currentPage - 1) * ITEMS_PER_PAGE,
     },
   });
+
+  const [deleteAuthor, { loading: isDeleting }] = useMutation(DELETE_AUTHOR, {
+    variables: {
+      id: selectedAuthor?.id,
+    },
+  });
+
+  async function confirmDeleteAuthor() {
+    if (!selectedAuthor) return;
+    try {
+      await deleteAuthor({
+        variables: {
+          id: selectedAuthor.id,
+        },
+      });
+      await refetchAuthors();
+      setShowDeleteConfirmation(false);
+    } catch (e) {
+      setShowSomethingWentWrong(true);
+    }
+  }
 
   return (
     <>
@@ -58,7 +145,10 @@ const Authors = ({ currentPage }: { currentPage: number }) => {
         <div className="flex items-end sm:ml-12 w-full sm:w-auto">
           <button
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => setShowModal(true)}
+            onClick={() => {
+              setSelectedAuthor(null);
+              setShowAuthorCreationModal(true);
+            }}
           >
             Add Author
           </button>
@@ -72,7 +162,7 @@ const Authors = ({ currentPage }: { currentPage: number }) => {
             <thead>
               <tr>
                 <th className="border-b font-medium p-4  pb-3 text-slate-400 text-left">
-                  Name
+                  Authors
                 </th>
               </tr>
             </thead>
@@ -83,13 +173,31 @@ const Authors = ({ currentPage }: { currentPage: number }) => {
                     {author.name}
                   </td>
                   <td className="border-y flex gap-4 justify-end border-slate-100 p-4 text-slate-500">
-                    <button className="px-4 py-2 bg-blue-400 text-white rounded">
+                    <button
+                      className="px-4 py-2 bg-blue-400 text-white rounded"
+                      onClick={() => {
+                        setSelectedAuthor(author);
+                        setShowBookCreationModal(true);
+                      }}
+                    >
                       Add Book
                     </button>
-                    <button className="px-4 py-2 bg-gray-400 text-white rounded">
+                    <button
+                      onClick={() => {
+                        setSelectedAuthor(author);
+                        setShowAuthorCreationModal(true);
+                      }}
+                      className="px-4 py-2 bg-gray-400 text-white rounded"
+                    >
                       Edit
                     </button>
-                    <button className="px-4 py-2 bg-gray-400 text-white rounded">
+                    <button
+                      onClick={() => {
+                        setSelectedAuthor(author);
+                        setShowDeleteConfirmation(true);
+                      }}
+                      className="px-4 py-2 bg-gray-400 text-white rounded"
+                    >
                       Delete
                     </button>
                   </td>
@@ -99,18 +207,44 @@ const Authors = ({ currentPage }: { currentPage: number }) => {
           </table>
         )}
       </div>
-      {showModal && (
-        <CreateAuthorModal
-          onCreateAuthorSuccess={() => {
+      {showAuthorCreationModal && (
+        <AuthorModal
+          author={selectedAuthor}
+          onAuthorSuccess={() => {
             refetchAuthors();
-            setShowModal(false);
+            setShowAuthorCreationModal(false);
           }}
-          onCreateAuthorFailure={() => {
-            setShowModal(false);
+          onAuthorFailure={() => {
+            setShowAuthorCreationModal(false);
           }}
           onCancel={() => {
-            setShowModal(false);
+            setShowAuthorCreationModal(false);
           }}
+        />
+      )}
+      {showBookCreationModal && selectedAuthor && (
+        <BookModal
+          selectedAuthorID={selectedAuthor.id}
+          onCreateBookSuccess={() => {
+            setShowBookCreationModal(false);
+          }}
+          onCreateBookFailure={() => {
+            setShowBookCreationModal(false);
+          }}
+          onCancel={() => setShowBookCreationModal(false)}
+        />
+      )}
+      {showDeleteConfirmation && selectedAuthor && (
+        <ConfirmDeleteModal
+          author={selectedAuthor}
+          onConfirm={confirmDeleteAuthor}
+          onCancel={() => setShowDeleteConfirmation(false)}
+          isBusy={isDeleting}
+        />
+      )}
+      {showSomethingWentWrong && (
+        <SomethingWentWrongModal
+          onConfirm={() => setShowSomethingWentWrong(false)}
         />
       )}
     </>
