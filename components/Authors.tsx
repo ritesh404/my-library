@@ -8,6 +8,7 @@ import Modal from "./Modal";
 import Pagination from "./Pagination";
 import { Author } from "@/lib/types/author";
 import { useSearchParams, useRouter } from "next/navigation";
+import GenericErrorModal from "./GenericErrorModal";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -49,23 +50,6 @@ const ConfirmDeleteModal = ({
             </button>
           </>
         )}
-      </div>
-    </Modal>
-  );
-};
-
-const SomethingWentWrongModal = ({ onConfirm }: { onConfirm: () => void }) => {
-  return (
-    <Modal>
-      <p>Something went wrong</p>
-      <div className="mt-4 flex gap-8">
-        <button
-          type="button"
-          className=" px-4 py-2 text-sm font-medium text-red-900 bg-red-100 border border-transparent rounded-md hover:bg-red-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500"
-          onClick={onConfirm}
-        >
-          Ok
-        </button>
       </div>
     </Modal>
   );
@@ -261,10 +245,10 @@ const Authors = () => {
       {showBookCreationModal && selectedAuthor && (
         <BookModal
           selectedAuthorID={selectedAuthor.id}
-          onCreateBookSuccess={() => {
+          onBookSuccess={() => {
             setShowBookCreationModal(false);
           }}
-          onCreateBookFailure={() => {
+          onBookFailure={() => {
             setShowBookCreationModal(false);
           }}
           onCancel={() => setShowBookCreationModal(false)}
@@ -279,9 +263,7 @@ const Authors = () => {
         />
       )}
       {showSomethingWentWrong && (
-        <SomethingWentWrongModal
-          onConfirm={() => setShowSomethingWentWrong(false)}
-        />
+        <GenericErrorModal onConfirm={() => setShowSomethingWentWrong(false)} />
       )}
     </>
   );

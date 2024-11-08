@@ -1,50 +1,70 @@
 import Modal from "./Modal";
 import React, { useState } from "react";
 import { useMutation } from "@apollo/client";
-import { BOOKS_QUERY, CREATE_BOOK } from "@/lib/gql/book";
+import { BOOKS_QUERY, CREATE_BOOK, UPDATE_BOOK } from "@/lib/gql/book";
 import { Book } from "@/lib/types/book";
 
 interface BookModalProps {
+  book?: Book;
   selectedAuthorID: string;
-  onCreateBookSuccess: (book: Book) => void;
-  onCreateBookFailure: () => void;
+  onBookSuccess: (book: Book) => void;
+  onBookFailure: () => void;
   onCancel: () => void;
 }
 
 const BookForm = ({
+  book,
   selectedAuthorID,
-  onCreateBookSuccess,
-  onCreateBookFailure,
+  onBookSuccess,
+  onBookFailure,
   onCancel,
 }: BookModalProps) => {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [publishedDate, setPublishedDate] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [title, setTitle] = useState(book?.title || "");
+  const [description, setDescription] = useState(book?.description || "");
+  const [publishedDate, setPublishedDate] = useState(
+    book?.published_date
+      ? new Date(Number(book.published_date)).toISOString().slice(0, 10)
+      : ""
+  );
 
-  const [createBook] = useMutation(CREATE_BOOK, {
+  const [createBook, { loading: isCreating }] = useMutation(CREATE_BOOK, {
+    refetchQueries: [{ query: BOOKS_QUERY }],
+  });
+
+  const [updateBook, { loading: isUpdating }] = useMutation(UPDATE_BOOK, {
     refetchQueries: [{ query: BOOKS_QUERY }],
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
     try {
-      const { data } = await createBook({
-        variables: {
-          title,
-          description,
-          published_date: publishedDate,
-          author_id: selectedAuthorID,
-        },
-      });
-      onCreateBookSuccess(data.createBook);
+      if (book) {
+        const { data } = await updateBook({
+          variables: {
+            id: book.id,
+            title,
+            description,
+            published_date: publishedDate,
+            author_id: book.author.id,
+          },
+        });
+        onBookSuccess(data.updateBook);
+      } else {
+        const { data } = await createBook({
+          variables: {
+            title,
+            description,
+            published_date: publishedDate,
+            author_id: selectedAuthorID,
+          },
+        });
+        onBookSuccess(data.createBook);
+      }
     } catch (error) {
       console.error("Error creating book:", error);
-      onCreateBookFailure();
+      onBookFailure();
     }
-    setIsSubmitting(false);
   };
 
   return (
@@ -84,7 +104,7 @@ const BookForm = ({
         />
       </div>
 
-      {isSubmitting ? (
+      {isCreating || isUpdating ? (
         <div className="text-center">Please wait...</div>
       ) : (
         <>
@@ -92,7 +112,7 @@ const BookForm = ({
             type="submit"
             className="px-4 py-2 mt-4 bg-blue-500 text-white rounded"
           >
-            Add
+            {book ? "Update" : "Add"}
           </button>
           <button
             type="button"
@@ -112,9 +132,10 @@ const CreateBookModal = (props: BookModalProps) => {
     <Modal>
       <div className="mt-2">
         <BookForm
+          book={props.book}
           selectedAuthorID={props.selectedAuthorID}
-          onCreateBookSuccess={props.onCreateBookSuccess}
-          onCreateBookFailure={props.onCreateBookFailure}
+          onBookSuccess={props.onBookSuccess}
+          onBookFailure={props.onBookFailure}
           onCancel={props.onCancel}
         />
       </div>

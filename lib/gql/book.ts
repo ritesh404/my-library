@@ -53,3 +53,35 @@ export const CREATE_BOOK = gql`
     }
   }
 `;
+
+export const UPDATE_BOOK = gql`
+  mutation UpdateBook(
+    $id: ID!
+    $title: String
+    $description: String
+    $published_date: String
+    $author_id: String
+  ) {
+    updateBook(
+      id: $id
+      title: $title
+      description: $description
+      published_date: $published_date
+      author_id: $author_id
+    ) {
+      id
+      title
+      description
+    }
+  }
+`;
+
+export const DELETE_BOOK = gql`
+  mutation DeleteBook($id: ID!) {
+    deleteBook(id: $id) {
+      id
+      title
+      description
+    }
+  }
+`;
