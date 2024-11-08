@@ -13,15 +13,27 @@ import {
   deleteBookMutationResolver,
   updateBookMutationResolver,
 } from "@/lib/resolvers/book";
-import { authorMutation, authorQuery, authorType } from "@/lib/typeDefs/author";
-import { bookMutation, bookQuery, bookType } from "@/lib/typeDefs/book";
+import {
+  authorMutation,
+  authorQuery,
+  authorType,
+  paginatedAuthorType,
+} from "@/lib/typeDefs/author";
+import {
+  bookMutation,
+  bookQuery,
+  bookType,
+  paginatedBookType,
+} from "@/lib/typeDefs/book";
 import { once } from "@/lib/util/once";
 import { ApolloServer } from "@apollo/server";
 import { startServerAndCreateNextHandler } from "@as-integrations/next";
 
 const typeDefs = `
  ${bookType}
+ ${paginatedBookType}
  ${authorType}
+ ${paginatedAuthorType}
 
   type Query {
     ${bookQuery}

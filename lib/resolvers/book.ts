@@ -11,6 +11,7 @@ export async function bookQueryResolver(
     title,
     author_id,
     published_date,
+    author_name,
   }: {
     limit: number;
     offset: number;
@@ -18,9 +19,22 @@ export async function bookQueryResolver(
     title?: string;
     author_id?: string;
     published_date?: string;
+    author_name?: string;
   }
 ) {
   const where: WhereOptions = {}; // Using WhereOptions directly
+
+  if (author_name) {
+    const author = await Author.findAll({
+      where: { name: { [Op.iLike]: `%${author_name}%` } },
+    });
+    if (author) {
+      where.author_id = {
+        //@ts-expect-error - TS doesn't know that author is an array of Author
+        [Op.in]: author.map((a) => a?.id),
+      };
+    }
+  }
 
   // Filtering options
   if (title) where.title = { [Op.iLike]: `%${title}%` };
@@ -28,12 +42,21 @@ export async function bookQueryResolver(
   if (author_id) where.author_id = author_id;
   if (id) where.id = id;
 
-  return await Book.findAll({
+  const count = await Book.count({
+    where,
+  });
+
+  const books = await Book.findAll({
     where,
     limit,
     offset,
     include: [{ model: Author, as: "author" }],
   });
+
+  return {
+    books,
+    count,
+  };
 }
 
 export async function createBookMutationResolver(

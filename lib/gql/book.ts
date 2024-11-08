@@ -1,11 +1,35 @@
 import { gql } from "@apollo/client";
 
 export const BOOKS_QUERY = gql`
-  query Books($limit: Int, $offset: Int) {
-    books(limit: $limit, offset: $offset) {
-      id
-      title
-      description
+  query Books(
+    $limit: Int
+    $offset: Int
+    $id: ID
+    $title: String
+    $author_id: ID
+    $published_date: String
+    $author_name: String
+  ) {
+    books(
+      limit: $limit
+      offset: $offset
+      id: $id
+      title: $title
+      author_id: $author_id
+      published_date: $published_date
+      author_name: $author_name
+    ) {
+      books {
+        id
+        title
+        description
+        published_date
+        author {
+          id
+          name
+        }
+      }
+      count
     }
   }
 `;

@@ -4,7 +4,3 @@ export interface Author {
   biography?: string;
   born_date?: string;
 }
-
-export interface AuthorsQueryResult {
-  authors: Author[];
-}

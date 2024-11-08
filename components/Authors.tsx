@@ -1,15 +1,13 @@
+"use client";
 import { useMutation, useQuery } from "@apollo/client";
 import { useState } from "react";
 import AuthorModal from "./AuthorModal";
 import BookModal from "./BookModal";
 import { AUTHORS_QUERY, DELETE_AUTHOR } from "@/lib/gql/author";
 import Modal from "./Modal";
-
-interface Author {
-  id: string;
-  name: string;
-  biography: string;
-}
+import Pagination from "./Pagination";
+import { Author } from "@/lib/types/author";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -73,7 +71,12 @@ const SomethingWentWrongModal = ({ onConfirm }: { onConfirm: () => void }) => {
   );
 };
 
-const Authors = ({ currentPage }: { currentPage: number }) => {
+const Authors = () => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const currentPage = searchParams.get("page")
+    ? Number(searchParams.get("page"))
+    : 1;
   const [nameFilter, setNameFilter] = useState("");
   const [yearFilter, setYearFilter] = useState("");
   const [showAuthorCreationModal, setShowAuthorCreationModal] = useState(false);
@@ -86,18 +89,31 @@ const Authors = ({ currentPage }: { currentPage: number }) => {
     data,
     loading,
     refetch: refetchAuthors,
-  } = useQuery<{ authors: Author[] }>(AUTHORS_QUERY, {
-    variables: {
-      limit: ITEMS_PER_PAGE,
-      offset: (currentPage - 1) * ITEMS_PER_PAGE,
-    },
-  });
+  } = useQuery<{ authors: { authors: Author[]; count: number } }>(
+    AUTHORS_QUERY,
+    {
+      variables: {
+        limit: ITEMS_PER_PAGE,
+        offset: (currentPage - 1) * ITEMS_PER_PAGE,
+      },
+    }
+  );
+  const totalPages = data ? Math.ceil(data.authors.count / ITEMS_PER_PAGE) : 0;
 
   const [deleteAuthor, { loading: isDeleting }] = useMutation(DELETE_AUTHOR, {
     variables: {
       id: selectedAuthor?.id,
     },
   });
+
+  async function handleRefetchAuthors() {
+    await refetchAuthors({
+      limit: ITEMS_PER_PAGE,
+      offset: (currentPage - 1) * ITEMS_PER_PAGE,
+      name: nameFilter,
+      born_year: yearFilter,
+    });
+  }
 
   async function confirmDeleteAuthor() {
     if (!selectedAuthor) return;
@@ -107,7 +123,7 @@ const Authors = ({ currentPage }: { currentPage: number }) => {
           id: selectedAuthor.id,
         },
       });
-      await refetchAuthors();
+      await handleRefetchAuthors();
       setShowDeleteConfirmation(false);
     } catch (e) {
       setShowSomethingWentWrong(true);
@@ -141,6 +157,17 @@ const Authors = ({ currentPage }: { currentPage: number }) => {
               onChange={(e) => setYearFilter(e.target.value || "")}
             />
           </div>
+          <div className="flex items-end">
+            <button
+              disabled={loading}
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              onClick={() => {
+                handleRefetchAuthors();
+              }}
+            >
+              Search
+            </button>
+          </div>
         </div>
         <div className="flex items-end sm:ml-12 w-full sm:w-auto">
           <button
@@ -167,7 +194,7 @@ const Authors = ({ currentPage }: { currentPage: number }) => {
               </tr>
             </thead>
             <tbody className="bg-white ">
-              {data?.authors.map((author: Author) => (
+              {data?.authors.authors.map((author: Author) => (
                 <tr key={author.id}>
                   <td className="border-y pl-8 border-l border-slate-100 p-4 text-slate-500">
                     {author.name}
@@ -207,11 +234,20 @@ const Authors = ({ currentPage }: { currentPage: number }) => {
           </table>
         )}
       </div>
+      {!loading && totalPages > 1 && (
+        <Pagination
+          totalPages={totalPages}
+          currentPage={currentPage}
+          onPageChange={(pageNo) => {
+            router.push(`/authors?page=${pageNo}`);
+          }}
+        />
+      )}
       {showAuthorCreationModal && (
         <AuthorModal
           author={selectedAuthor}
           onAuthorSuccess={() => {
-            refetchAuthors();
+            handleRefetchAuthors();
             setShowAuthorCreationModal(false);
           }}
           onAuthorFailure={() => {

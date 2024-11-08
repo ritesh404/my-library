@@ -7,8 +7,15 @@ export const authorType = `
     books: [Book]
   }`;
 
+export const paginatedAuthorType = `
+  type PaginatedAuthors {
+    authors: [Author!]!
+    count: Int!
+  }
+`;
+
 export const authorQuery = `
-authors(limit: Int, offset: Int, id: ID, name: String, born_date: String): [Author]`;
+authors(limit: Int, offset: Int, id: ID, name: String, born_year: String): PaginatedAuthors`;
 
 export const authorMutation = `
   createAuthor(name: String!, biography: String, born_date: String): Author

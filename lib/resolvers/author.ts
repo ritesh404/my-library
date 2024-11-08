@@ -9,13 +9,13 @@ export async function authorQueryResolver(
     offset = 0,
     id,
     name,
-    born_date,
+    born_year,
   }: {
     limit?: number;
     offset?: number;
     id?: string;
     name?: string;
-    born_date?: string;
+    born_year?: string;
   }
 ) {
   const where: WhereOptions = {};
@@ -25,16 +25,28 @@ export async function authorQueryResolver(
       [Op.iLike]: `%${name}%`,
     };
 
-  if (born_date) where.born_date = born_date;
+  if (born_year)
+    where.born_date = {
+      [Op.between]: [`${born_year}-01-01`, `${born_year}-12-31`],
+    };
 
   if (id) where.id = id;
 
-  return await Author.findAll({
+  const count = await Author.count({
+    where,
+  });
+
+  const authors = await Author.findAll({
     where,
     limit,
     offset,
     include: [{ model: Book, as: "books" }],
   });
+
+  return {
+    authors,
+    count,
+  };
 }
 
 export async function createAuthorMutationResolver(

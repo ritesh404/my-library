@@ -1,7 +1,7 @@
 import Modal from "./Modal";
 import React, { useState } from "react";
 import { useMutation } from "@apollo/client";
-import { CREATE_BOOK } from "@/lib/gql/book";
+import { BOOKS_QUERY, CREATE_BOOK } from "@/lib/gql/book";
 import { Book } from "@/lib/types/book";
 
 interface BookModalProps {
@@ -22,7 +22,9 @@ const BookForm = ({
   const [publishedDate, setPublishedDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [createBook] = useMutation(CREATE_BOOK);
+  const [createBook] = useMutation(CREATE_BOOK, {
+    refetchQueries: [{ query: BOOKS_QUERY }],
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
