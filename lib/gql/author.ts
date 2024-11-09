@@ -1,10 +1,17 @@
 import { gql } from "@apollo/client";
 
 export const AUTHORS_QUERY = gql`
-  query Authors($limit: Int, $offset: Int, $name: String, $born_year: String) {
+  query Authors(
+    $limit: Int
+    $offset: Int
+    $id: ID
+    $name: String
+    $born_year: String
+  ) {
     authors(
       limit: $limit
       offset: $offset
+      id: $id
       name: $name
       born_year: $born_year
     ) {
