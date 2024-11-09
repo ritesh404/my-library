@@ -1,6 +1,9 @@
 import { Op, WhereOptions } from "sequelize";
 import { Author } from "../models/author";
 import { Book } from "../models/book";
+import { createAuthorLoader } from "../dataloaders/authorLoader";
+
+const authorLoader = createAuthorLoader();
 
 export async function authorQueryResolver(
   _parent: unknown,
@@ -18,6 +21,15 @@ export async function authorQueryResolver(
     born_year?: string;
   }
 ) {
+  // If querying by ID, use the loader
+  if (id) {
+    const author = await authorLoader.load(id);
+    return {
+      authors: author ? [author] : [],
+      count: author ? 1 : 0,
+    };
+  }
+
   const where: WhereOptions = {};
 
   if (name)
@@ -29,8 +41,6 @@ export async function authorQueryResolver(
     where.born_date = {
       [Op.between]: [`${born_year}-01-01`, `${born_year}-12-31`],
     };
-
-  if (id) where.id = id;
 
   const count = await Author.count({
     where,
@@ -101,7 +111,9 @@ export async function updateAuthorMutationResolver(
         },
       }
     );
-    const author = await Author.findByPk(id);
+
+    authorLoader.clear(id);
+    const author = await authorLoader.load(id);
     return author;
   } catch (error) {
     console.error("Error updating author:", error);
@@ -118,12 +130,14 @@ export async function deleteAuthorMutationResolver(
   }
 ) {
   try {
-    const author = await Author.findByPk(id);
+    const author = await authorLoader.load(id);
     await Author.destroy({
       where: {
         id,
       },
     });
+
+    authorLoader.clear(id);
     return author;
   } catch (error) {
     console.error("Error deleting author:", error);

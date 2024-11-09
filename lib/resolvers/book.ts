@@ -1,6 +1,9 @@
 import { Op, WhereOptions } from "sequelize";
 import { Book } from "../models/book";
 import { Author } from "../models/author";
+import { createBookLoader } from "../dataloaders/bookLoader";
+
+const bookLoader = createBookLoader();
 
 export async function bookQueryResolver(
   _parent: unknown,
@@ -22,7 +25,15 @@ export async function bookQueryResolver(
     author_name?: string;
   }
 ) {
-  const where: WhereOptions = {}; // Using WhereOptions directly
+  if (id) {
+    const book = await bookLoader.load(id);
+    return {
+      books: book ? [book] : [],
+      count: book ? 1 : 0,
+    };
+  }
+
+  const where: WhereOptions = {};
 
   if (author_name) {
     const author = await Author.findAll({
@@ -40,7 +51,6 @@ export async function bookQueryResolver(
   if (title) where.title = { [Op.iLike]: `%${title}%` };
   if (published_date) where.published_date = published_date;
   if (author_id) where.author_id = author_id;
-  if (id) where.id = id;
 
   const count = await Book.count({
     where,
@@ -117,7 +127,9 @@ export async function updateBookMutationResolver(
         },
       }
     );
-    const book = await Book.findByPk(id);
+
+    bookLoader.clear(id);
+    const book = await bookLoader.load(id);
     return book;
   } catch (error) {
     console.error("Error updating book:", error);
@@ -134,12 +146,14 @@ export async function deleteBookMutationResolver(
   }
 ) {
   try {
-    const book = await Book.findByPk(id);
+    const book = await bookLoader.load(id);
     await Book.destroy({
       where: {
         id,
       },
     });
+
+    bookLoader.clear(id);
     return book;
   } catch (error) {
     console.error("Error deleting book:", error);
