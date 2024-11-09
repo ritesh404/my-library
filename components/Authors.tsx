@@ -180,7 +180,10 @@ const Authors = () => {
             <tbody className="bg-white ">
               {data?.authors.authors.map((author: Author) => (
                 <tr key={author.id}>
-                  <td className="border-y pl-8 border-l border-slate-100 p-4 text-slate-500">
+                  <td
+                    className="border-y pl-8 border-l border-slate-100 p-4 text-slate-500 hover:underline cursor-pointer"
+                    onClick={() => router.push(`/authors/${author.id}`)}
+                  >
                     {author.name}
                   </td>
                   <td className="border-y flex gap-4 justify-end border-slate-100 p-4 text-slate-500">
