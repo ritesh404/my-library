@@ -1,6 +1,7 @@
 import DataLoader from "dataloader";
 import { Author } from "../models/author";
 import { Author as AuthorType } from "../types/author";
+import { Book } from "../models/book";
 
 export const createAuthorLoader = () => {
   return new DataLoader(async (ids: readonly string[]) => {
@@ -8,6 +9,7 @@ export const createAuthorLoader = () => {
       where: {
         id: ids,
       },
+      include: [{ model: Book, as: "books" }],
     });
 
     const authorMap = authors.reduce((map, author) => {

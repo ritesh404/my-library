@@ -20,6 +20,12 @@ export const AUTHORS_QUERY = gql`
         name
         biography
         born_date
+        books {
+          id
+          title
+          published_date
+          description
+        }
       }
       count
     }
