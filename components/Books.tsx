@@ -158,7 +158,7 @@ const Books = () => {
                 {data?.books.books.map((book: Book) => (
                   <tr key={book.id}>
                     <td
-                      className="border-y pl-8 border-l border-slate-100 p-4 text-slate-500"
+                      className="border-y pl-8 border-l border-slate-100 p-4 text-slate-500 cursor-pointer"
                       onClick={() => {
                         router.push(`/books/${book.id}`);
                       }}
