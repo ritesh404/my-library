@@ -14,6 +14,10 @@ import {
   updateBookMutationResolver,
 } from "@/lib/resolvers/book";
 import {
+  createReviewMutationResolver,
+  reviewQueryResolver,
+} from "@/lib/resolvers/review";
+import {
   authorMutation,
   authorQuery,
   authorType,
@@ -25,24 +29,34 @@ import {
   bookType,
   paginatedBookType,
 } from "@/lib/typeDefs/book";
+import {
+  reviewMutation,
+  reviewQuery,
+  reviewResponseType,
+  reviewType,
+} from "@/lib/typeDefs/review";
 import { once } from "@/lib/util/once";
 import { ApolloServer } from "@apollo/server";
 import { startServerAndCreateNextHandler } from "@as-integrations/next";
 
 const typeDefs = `
- ${bookType}
- ${paginatedBookType}
- ${authorType}
- ${paginatedAuthorType}
+  ${bookType}
+  ${paginatedBookType}
+  ${authorType}
+  ${paginatedAuthorType}
+  ${reviewType}
+  ${reviewResponseType}
 
   type Query {
     ${bookQuery}
     ${authorQuery}
-  }
+    ${reviewQuery}
+   }
   
   type Mutation {
     ${bookMutation}
     ${authorMutation}
+    ${reviewMutation}
   }
 `;
 
@@ -50,6 +64,7 @@ const resolvers = {
   Query: {
     books: bookQueryResolver,
     authors: authorQueryResolver,
+    reviews: reviewQueryResolver,
   },
   Mutation: {
     createBook: createBookMutationResolver,
@@ -58,6 +73,7 @@ const resolvers = {
     createAuthor: createAuthorMutationResolver,
     updateAuthor: updateAuthorMutationResolver,
     deleteAuthor: deleteAuthorMutationResolver,
+    createReview: createReviewMutationResolver,
   },
 };
 
@@ -76,7 +92,6 @@ const startUp = once(async function _startUp() {
 
 export async function GET(request: Request) {
   const handler = await startUp();
-  // return new Response("Hello, Next.js!");
   return handler(request);
 }
 
